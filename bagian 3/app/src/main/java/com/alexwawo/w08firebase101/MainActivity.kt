@@ -47,9 +47,10 @@ fun StudentRegistrationScreen(viewModel: StudentViewModel = viewModel()) {
     var studentId by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var program by remember { mutableStateOf("") }
-
     var currentPhone by remember { mutableStateOf("") }
     var phoneList by remember { mutableStateOf(listOf<String>()) }
+
+    var editingDocId by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = Modifier
         .padding(16.dp)
@@ -77,20 +78,62 @@ fun StudentRegistrationScreen(viewModel: StudentViewModel = viewModel()) {
         }
 
         if (phoneList.isNotEmpty()) {
-            Text("Phone Numbers:", style = MaterialTheme.typography.labelLarge)
-            phoneList.forEach {
-                Text("- $it")
+            Text(
+                "Phone Numbers:",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+            phoneList.forEachIndexed { index, phone ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    TextField(
+                        value = phone,
+                        onValueChange = {
+                            phoneList = phoneList.toMutableList().also { list -> list[index] = it }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = {
+                            phoneList = phoneList.toMutableList().also { it.removeAt(index) }
+                        },
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text("Delete")
+                    }
+                }
             }
         }
 
-        Button(onClick = {
-            viewModel.addStudent(Student(studentId, name, program, phoneList))
-            studentId = ""
-            name = ""
-            program = ""
-            phoneList = listOf()
-        }, modifier = Modifier.padding(top = 8.dp)) {
-            Text("Submit")
+        Button(
+            onClick = {
+                if (editingDocId != null) {
+                    viewModel.updateStudent(
+                        Student(
+                            id = studentId,
+                            name = name,
+                            program = program,
+                            phones = phoneList,
+                            docId = editingDocId!!
+                        )
+                    )
+                    editingDocId = null
+                } else {
+                    viewModel.addStudent(Student(studentId, name, program, phoneList))
+                }
+
+                // Reset form
+                studentId = ""
+                name = ""
+                program = ""
+                phoneList = listOf()
+                currentPhone = ""
+            },
+            modifier = Modifier.padding(top = 12.dp)
+        ) {
+            Text(if (editingDocId != null) "Update" else "Submit")
         }
 
         Divider(modifier = Modifier.padding(vertical = 16.dp))
@@ -109,12 +152,32 @@ fun StudentRegistrationScreen(viewModel: StudentViewModel = viewModel()) {
                             Text("- $it", style = MaterialTheme.typography.bodySmall)
                         }
                     }
-                    Divider()
+                    Row(modifier = Modifier.padding(top = 8.dp)) {
+                        Button(onClick = {
+                            studentId = student.id
+                            name = student.name
+                            program = student.program
+                            phoneList = student.phones
+                            editingDocId = student.docId
+                        }) {
+                            Text("Edit")
+                        }
+                        Button(
+                            onClick = {
+                                viewModel.deleteStudent(student)
+                            },
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) {
+                            Text("Delete")
+                        }
+                    }
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
                 }
             }
         }
     }
 }
+
 
 
 
